@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Helper",
+  "version": "1.0.0",
+  "description": "Speed controls and screenshot capture for YouTube.",
+  "permissions": ["activeTab", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
