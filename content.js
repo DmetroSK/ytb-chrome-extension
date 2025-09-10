@@ -1,6 +1,10 @@
 (function () {
   const speeds = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
   let buttonsContainer;
+  // default speed
+  let lastSpeed = 2;
+  // Track selected button
+  let activeBtn = null;
 
   function createSpeedButtons() {
     // Prevent duplicates
@@ -43,12 +47,16 @@
 
       // Hover effect
       button.addEventListener("mouseenter", () => {
-        button.style.background = "rgba(255,255,255,0.35)";
-        button.style.transform = "scale(1.05)";
+        if (button !== activeBtn) {
+          button.style.background = "rgba(255,255,255,0.35)";
+          button.style.transform = "scale(1.05)";
+        }
       });
       button.addEventListener("mouseleave", () => {
-        button.style.background = "rgba(255,255,255,0.2)";
-        button.style.transform = "scale(1)";
+        if (button !== activeBtn) {
+          button.style.background = "rgba(255,255,255,0.2)";
+          button.style.transform = "scale(1)";
+        }
       });
 
       return button;
@@ -60,8 +68,23 @@
       btn.addEventListener("click", () => {
         const video = document.querySelector("video");
         if (video) video.playbackRate = speed;
+        lastSpeed = speed;
+
+        // Reset previous active
+        if (activeBtn) {
+          activeBtn.style.background = "rgba(255,255,255,0.2)";
+          activeBtn.style.transform = "scale(1)";
+        }
+
+        // Highlight new active
+        btn.style.background = "rgba(0,150,255,0.6)";
+        btn.style.transform = "scale(1.1)";
+        activeBtn = btn;
       });
       buttonsContainer.appendChild(btn);
+
+      // Pre-highlight default 1x
+      if (speed === lastSpeed) activeBtn = btn;
     });
 
     // Screenshot button
@@ -89,6 +112,34 @@
 
     // Append container to player
     player.appendChild(buttonsContainer);
+
+    // Highlight default
+    if (activeBtn) {
+      activeBtn.style.background = "rgba(0,150,255,0.6)";
+      activeBtn.style.transform = "scale(1.1)";
+    }
+  }
+
+  // Apply last used speed on video load
+  function applyLastSpeed() {
+    const video = document.querySelector("video");
+    if (video) video.playbackRate = lastSpeed;
+
+    // Sync active button if speed reapplied after ads
+    if (buttonsContainer) {
+      const buttons = buttonsContainer.querySelectorAll("button");
+      buttons.forEach((btn) => {
+        if (btn.textContent === `${lastSpeed}x`) {
+          if (activeBtn) {
+            activeBtn.style.background = "rgba(255,255,255,0.2)";
+            activeBtn.style.transform = "scale(1)";
+          }
+          btn.style.background = "rgba(0,150,255,0.6)";
+          btn.style.transform = "scale(1.1)";
+          activeBtn = btn;
+        }
+      });
+    }
   }
 
   // Watch for player container in case of dynamic page loads
@@ -97,6 +148,7 @@
     if (player && !buttonsContainer) {
       createSpeedButtons();
     }
+    applyLastSpeed();
   }
 
   const observer = new MutationObserver(checkForPlayer);
