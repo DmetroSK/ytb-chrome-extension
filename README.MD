@@ -74,7 +74,3 @@ Contributions are what make the open source community such an amazing place to b
 ## Support
 
 Give a ⭐️ if this project helped you!
-
-```
-
-```
