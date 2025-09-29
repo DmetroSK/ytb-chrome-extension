@@ -55,6 +55,7 @@ All notable changes to this project will be documented in this section.
 - 1.0.0 - 2025-09-09 - Initial Commit with main features
 - 1.1.0 - 2025-09-10 - Preserve speed across ads/navigation, highlight selected button
 - 1.2.0 - 2025-09-29 - Dislike Count add
+- 1.3.0 - 2025-09-29 - Popup add to show, hide features.
 
 ## Reference
 

@@ -1,17 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Helper",
-  "version": "1.0.0",
-  "description": "Speed controls and screenshot capture for YouTube.",
-  "permissions": ["activeTab", "tabs"],
+  "name": "YouTube Toolbar Controls",
+  "version": "1.0",
+  "description": "YouTube speed controls, dislike counter, screenshot.",
+  "permissions": ["storage", "scripting", "activeTab", "tabs"],
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": ["content.js"]
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icons/youtube.png"
     }
-  ]
+  }
 }
