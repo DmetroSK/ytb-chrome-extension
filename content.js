@@ -9,6 +9,12 @@
   let speedToggleBtn = null;
   let speedPanelVisible = false;
   let speedPanelTimeout;
+  let monoBtn = null;
+  let audioContext = null;
+  let sourceNode = null;
+  let splitter = null;
+  let merger = null;
+  let monoEnabled = false;
 
   // default visibility
   let states = {
@@ -16,6 +22,7 @@
     showDislike: true,
     showSnapshot: true,
     showSpeed: true,
+    showMono: true,
   };
 
   // Load saved states
@@ -171,6 +178,49 @@
 
     buttonsContainer.appendChild(snapBtn);
 
+    // Mono audio button
+    monoBtn = createButton("🎵 ", "Toggle mono audio");
+    monoBtn.addEventListener("click", () => {
+      const video = document.querySelector("video");
+      if (!video) {
+        console.log("Mono: No video element found");
+        return;
+      }
+
+      if (!audioContext) {
+        audioContext = new AudioContext();
+        sourceNode = audioContext.createMediaElementSource(video);
+        splitter = audioContext.createChannelSplitter(2);
+        merger = audioContext.createChannelMerger(2);
+
+        // Initial connection: normal stereo
+        sourceNode.connect(splitter);
+        splitter.connect(merger, 0, 0); // left -> left
+        splitter.connect(merger, 1, 1); // right -> right
+        merger.connect(audioContext.destination);
+      }
+
+      // Toggle mono
+      monoEnabled = !monoEnabled;
+
+      // Update connections
+      splitter.disconnect();
+      if (monoEnabled) {
+        splitter.connect(merger, 0, 0);
+        splitter.connect(merger, 0, 1);
+      } else {
+        splitter.connect(merger, 0, 0);
+        splitter.connect(merger, 1, 1);
+      }
+
+      // Highlight button
+      monoBtn.style.background = monoEnabled
+        ? "rgba(0,150,255,0.6)"
+        : "rgba(255,255,255,0.2)";
+    });
+
+    buttonsContainer.appendChild(monoBtn);
+
     // Append container to player
     player.appendChild(buttonsContainer);
     applyVisibility();
@@ -200,6 +250,15 @@
     dislikeBtnEl.style.display = states.showDislike ? "flex" : "none";
     snapBtn.style.display = states.showSnapshot ? "flex" : "none";
     speedToggleBtn.style.display = states.showSpeed ? "flex" : "none";
+
+    if (monoBtn) {
+      monoBtn.style.display = states.showMono ? "flex" : "none";
+      if (states.showMono) {
+        monoBtn.style.background = monoEnabled
+          ? "rgba(0,150,255,0.6)"
+          : "rgba(255,255,255,0.2)";
+      }
+    }
 
     if (!speedPanelVisible) {
       speedBtns.forEach(

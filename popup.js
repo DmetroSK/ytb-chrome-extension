@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const toggles = ["Toolbar", "Dislike", "Snapshot", "Speed"];
+  const toggles = ["Toolbar", "Dislike", "Snapshot", "Speed", "Mono"];
 
   chrome.storage.sync.get(
     toggles.map((t) => "show" + t),
@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!el) return;
 
         // Set default checked
-        el.checked = res["show" + name] !== false; // default true
+        el.checked = res["show" + name] !== false;
 
         // Listen for changes
         el.addEventListener("change", () => {
@@ -18,12 +18,12 @@ document.addEventListener("DOMContentLoaded", () => {
           // Save state
           chrome.storage.sync.set({ ["show" + name]: state });
 
-          // Send message to active tab
+          // Send message to active tab to show/hide button
           chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (!tabs[0]) return; // no active tab
             chrome.tabs.sendMessage(tabs[0].id, {
               action: "toggle" + name,
-              state,
+              state, // true = show, false = hide
             });
           });
         });
