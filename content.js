@@ -25,13 +25,13 @@
     showMono: true,
   };
 
-  // Load saved states
+  // Load saved visibility states
   chrome.storage?.sync.get(Object.keys(states), (res) => {
     states = { ...states, ...res };
     checkForPlayer();
   });
 
-  // Listen for toggle messages
+  // Listen for popup toggle messages
   chrome.runtime?.onMessage.addListener((msg) => {
     if (msg.action && msg.action.startsWith("toggle")) {
       const key = "show" + msg.action.replace("toggle", "");
@@ -41,8 +41,43 @@
     }
   });
 
-  function createSpeedButtons() {
-    // Prevent duplicates
+  function createButton(label, title) {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.title = title || label;
+    Object.assign(btn.style, {
+      padding: "3px 8px",
+      fontSize: "13px",
+      color: "#fff",
+      background: "rgba(255,255,255,0.2)",
+      border: "1px solid rgba(255,255,255,0.3)",
+      borderRadius: "8px",
+      cursor: "pointer",
+      transition: "all 0.15s ease",
+      outline: "none",
+      display: "flex",
+      alignItems: "center",
+      gap: "3px",
+    });
+
+    btn.addEventListener("mouseenter", () => {
+      if (btn !== activeBtn) {
+        btn.style.background = "rgba(255,255,255,0.35)";
+        btn.style.transform = "scale(1.05)";
+      }
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      if (btn !== activeBtn) {
+        btn.style.background = "rgba(255,255,255,0.2)";
+        btn.style.transform = "scale(1)";
+      }
+    });
+
+    return btn;
+  }
+
+  function createButtons() {
     if (buttonsContainer) return;
 
     // Get the YouTube player container
@@ -61,71 +96,35 @@
       gap: "6px",
       backdropFilter: "blur(8px)",
       WebkitBackdropFilter: "blur(8px)",
+      flexWrap: "wrap", // safer for small screens
     });
-
-    // Helper function to create individual buttons
-    function createButton(label, title) {
-      const button = document.createElement("button");
-      button.textContent = label;
-      button.title = title || label;
-      Object.assign(button.style, {
-        padding: "3px 8px",
-        fontSize: "13px",
-        color: "#fff",
-        background: "rgba(255,255,255,0.2)",
-        border: "1px solid rgba(255,255,255,0.3)",
-        borderRadius: "8px",
-        cursor: "pointer",
-        transition: "all 0.15s ease",
-        outline: "none",
-        display: "flex",
-        alignItems: "center",
-        gap: "3px",
-      });
-
-      // Hover effect
-      button.addEventListener("mouseenter", () => {
-        if (button !== activeBtn) {
-          button.style.background = "rgba(255,255,255,0.35)";
-          button.style.transform = "scale(1.05)";
-        }
-      });
-      button.addEventListener("mouseleave", () => {
-        if (button !== activeBtn) {
-          button.style.background = "rgba(255,255,255,0.2)";
-          button.style.transform = "scale(1)";
-        }
-      });
-      return button;
-    }
 
     // Dislike button
     dislikeBtnEl = createButton("👎 N/A", "Dislike count");
     buttonsContainer.appendChild(dislikeBtnEl);
 
-    // Speed toggle
+    // Speed toggle button
     speedToggleBtn = createButton("⚡ Speed", "Show/Hide speed controls");
     speedToggleBtn.addEventListener("click", () => {
-      if (!speedPanelVisible) {
-        // Show all speed buttons
-        speedPanelVisible = true;
-        speedBtns.forEach((b) => (b.style.display = "flex"));
+      speedPanelVisible = !speedPanelVisible;
+      speedBtns.forEach(
+        (b) =>
+          (b.style.display = speedPanelVisible
+            ? "flex"
+            : b === activeBtn
+            ? "flex"
+            : "none")
+      );
 
-        // Auto-collapse after 10s
-        clearTimeout(speedPanelTimeout);
+      // Auto-collapse after 10s
+      clearTimeout(speedPanelTimeout);
+      if (speedPanelVisible) {
         speedPanelTimeout = setTimeout(() => {
           speedPanelVisible = false;
-          speedBtns.forEach((b) => {
-            b.style.display = b === activeBtn ? "flex" : "none";
-          });
+          speedBtns.forEach(
+            (b) => (b.style.display = b === activeBtn ? "flex" : "none")
+          );
         }, 10000);
-      } else {
-        // Hide buttons immediately (except active)
-        speedPanelVisible = false;
-        speedBtns.forEach((b) => {
-          b.style.display = b === activeBtn ? "flex" : "none";
-        });
-        clearTimeout(speedPanelTimeout);
       }
     });
     buttonsContainer.appendChild(speedToggleBtn);
@@ -153,7 +152,6 @@
 
       buttonsContainer.appendChild(btn);
       speedBtns.push(btn);
-
       if (speed === lastSpeed) activeBtn = btn;
     });
 
@@ -175,29 +173,30 @@
       link.click();
       link.remove();
     });
-
     buttonsContainer.appendChild(snapBtn);
 
     // Mono audio button
     monoBtn = createButton("🎵 ", "Toggle mono audio");
     monoBtn.addEventListener("click", () => {
       const video = document.querySelector("video");
-      if (!video) {
-        console.log("Mono: No video element found");
-        return;
-      }
+      if (!video) return console.log("Mono: No video element found");
 
       if (!audioContext) {
-        audioContext = new AudioContext();
-        sourceNode = audioContext.createMediaElementSource(video);
-        splitter = audioContext.createChannelSplitter(2);
-        merger = audioContext.createChannelMerger(2);
+        try {
+          audioContext = new AudioContext();
+          sourceNode = audioContext.createMediaElementSource(video);
+          splitter = audioContext.createChannelSplitter(2);
+          merger = audioContext.createChannelMerger(2);
 
-        // Initial connection: normal stereo
-        sourceNode.connect(splitter);
-        splitter.connect(merger, 0, 0); // left -> left
-        splitter.connect(merger, 1, 1); // right -> right
-        merger.connect(audioContext.destination);
+          // Initial connection: normal stereo
+          sourceNode.connect(splitter);
+          splitter.connect(merger, 0, 0); // left -> left
+          splitter.connect(merger, 1, 1); // right -> right
+          merger.connect(audioContext.destination);
+        } catch (e) {
+          console.error("AudioContext error:", e);
+          return;
+        }
       }
 
       // Toggle mono
@@ -218,14 +217,15 @@
         ? "rgba(0,150,255,0.6)"
         : "rgba(255,255,255,0.2)";
     });
-
     buttonsContainer.appendChild(monoBtn);
 
-    // Append container to player
+    // Append buttons
     player.appendChild(buttonsContainer);
+
+    // Apply saved visibility
     applyVisibility();
 
-    // Highlight default
+    // Highlight default speed button
     if (activeBtn) {
       activeBtn.style.background = "rgba(0,150,255,0.6)";
       activeBtn.style.transform = "scale(1.1)";
@@ -269,22 +269,20 @@
 
   function updateDislikeCount() {
     if (!dislikeBtnEl) return;
-    const match = location.search.match(/v=([^&]+)/);
-    if (!match) return;
-    const videoId = match[1];
+    const videoId = new URLSearchParams(location.search).get("v");
+    if (!videoId) return;
 
     chrome.runtime.sendMessage({ action: "getDislike", videoId }, (res) => {
-      if (res && res.dislikes != null) {
-        dislikeBtnEl.textContent = `👎 ${res.dislikes.toLocaleString()}`;
-      } else {
-        dislikeBtnEl.textContent = "👎 N/A";
-      }
+      dislikeBtnEl.textContent =
+        res?.dislikes != null
+          ? `👎 ${res.dislikes.toLocaleString()}`
+          : "👎 N/A";
     });
   }
 
   function checkForPlayer() {
     const player = document.querySelector("#below");
-    if (player && !buttonsContainer) createSpeedButtons();
+    if (player && !buttonsContainer) createButtons();
     applyLastSpeed();
     if (location.pathname === "/watch") updateDislikeCount();
 

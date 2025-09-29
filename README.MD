@@ -58,6 +58,7 @@ All notable changes to this project will be documented in this section.
 - 1.3.0 - 2025-09-29 - Popup add to show, hide features.
 - 1.4.0 - 2025-09-29 - Move dislike api to background.js
 - 1.5.0 - 2025-09-29 - Mono audio on/off add
+- 1.6.0 - 2025-09-29 - Bug fixed and optimized
 
 ## Reference
 
