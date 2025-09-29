@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Toolbar Controls",
-  "version": "1.0",
+  "version": "1.4",
   "description": "YouTube speed controls, dislike counter, screenshot.",
   "permissions": ["storage", "scripting", "activeTab", "tabs"],
   "content_scripts": [

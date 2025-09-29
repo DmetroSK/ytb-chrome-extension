@@ -12,3 +12,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 });
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg.action === "getDislike" && msg.videoId) {
+    fetch(`https://returnyoutubedislikeapi.com/votes?videoId=${msg.videoId}`)
+      .then((res) => res.json())
+      .then((data) => sendResponse({ dislikes: data.dislikes }))
+      .catch(() => sendResponse({ dislikes: null }));
+    return true; // keep the message channel open for async response
+  }
+});

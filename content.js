@@ -208,22 +208,19 @@
     }
   }
 
-  async function updateDislikeCount() {
+  function updateDislikeCount() {
     if (!dislikeBtnEl) return;
     const match = location.search.match(/v=([^&]+)/);
     if (!match) return;
     const videoId = match[1];
-    try {
-      const res = await fetch(
-        `https://returnyoutubedislikeapi.com/votes?videoId=${videoId}`
-      );
-      const data = await res.json();
-      const count = data.dislikes?.toLocaleString() || "N/A";
-      dislikeBtnEl.textContent = `👎 ${count}`;
-    } catch (e) {
-      console.error("Dislike API error:", e);
-      dislikeBtnEl.textContent = "👎 N/A";
-    }
+
+    chrome.runtime.sendMessage({ action: "getDislike", videoId }, (res) => {
+      if (res && res.dislikes != null) {
+        dislikeBtnEl.textContent = `👎 ${res.dislikes.toLocaleString()}`;
+      } else {
+        dislikeBtnEl.textContent = "👎 N/A";
+      }
+    });
   }
 
   function checkForPlayer() {
