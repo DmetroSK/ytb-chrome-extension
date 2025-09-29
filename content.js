@@ -1,10 +1,9 @@
 (function () {
-  const speeds = [1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+  const speeds = [1, 1.5, 2, 2.5, 3];
   let buttonsContainer;
-  // default speed
-  let lastSpeed = 2;
-  // Track selected button
-  let activeBtn = null;
+  let lastSpeed = 2; // default speed
+  let activeBtn = null; // Track selected button
+  let dislikeBtnEl = null;
 
   function createSpeedButtons() {
     // Prevent duplicates
@@ -43,6 +42,9 @@
         cursor: "pointer",
         transition: "all 0.15s ease",
         outline: "none",
+        display: "flex",
+        alignItems: "center",
+        gap: "3px",
       });
 
       // Hover effect
@@ -58,9 +60,12 @@
           button.style.transform = "scale(1)";
         }
       });
-
       return button;
     }
+
+    // Create placeholder dislike button
+    dislikeBtnEl = createButton("👎 N/A", "Dislike count");
+    buttonsContainer.appendChild(dislikeBtnEl);
 
     // Add speed buttons
     speeds.forEach((speed) => {
@@ -93,14 +98,12 @@
     snapBtn.addEventListener("click", () => {
       const video = document.querySelector("video");
       if (!video || !video.videoWidth) return;
-
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas
         .getContext("2d")
         .drawImage(video, 0, 0, canvas.width, canvas.height);
-
       const link = document.createElement("a");
       link.href = canvas.toDataURL("image/png");
       link.download = "yt-screenshot.png";
@@ -142,13 +145,29 @@
     }
   }
 
-  // Watch for player container in case of dynamic page loads
+  async function updateDislikeCount() {
+    if (!dislikeBtnEl) return;
+    const match = location.search.match(/v=([^&]+)/);
+    if (!match) return;
+    const videoId = match[1];
+    try {
+      const res = await fetch(
+        `https://returnyoutubedislikeapi.com/votes?videoId=${videoId}`
+      );
+      const data = await res.json();
+      const count = data.dislikes?.toLocaleString() || "N/A";
+      dislikeBtnEl.textContent = `👎 ${count}`;
+    } catch (e) {
+      console.error("Dislike API error:", e);
+      dislikeBtnEl.textContent = "👎 N/A";
+    }
+  }
+
   function checkForPlayer() {
     const player = document.querySelector("#below");
-    if (player && !buttonsContainer) {
-      createSpeedButtons();
-    }
+    if (player && !buttonsContainer) createSpeedButtons();
     applyLastSpeed();
+    if (location.pathname === "/watch") updateDislikeCount();
   }
 
   const observer = new MutationObserver(checkForPlayer);
